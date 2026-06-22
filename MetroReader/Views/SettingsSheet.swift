@@ -1,5 +1,8 @@
 import SwiftUI
 import UIKit
+#if targetEnvironment(macCatalyst)
+import AppKit
+#endif
 
 struct SettingsSheet: View {
     @ObservedObject var settings: ReadingSettings
@@ -121,7 +124,11 @@ struct SettingsSheet: View {
 
                                 // Step 2 — paste from clipboard (plain string, no RTF)
                                 Button {
+                                    #if targetEnvironment(macCatalyst)
+                                    let raw = NSPasteboard.general.string(forType: .string)
+                                    #else
                                     let raw = UIPasteboard.general.string
+                                    #endif
                                     print("[MetroReader] clipboard raw: \(raw?.debugDescription ?? "nil")")
                                     if let pasted = raw {
                                         let cleaned = pasted
