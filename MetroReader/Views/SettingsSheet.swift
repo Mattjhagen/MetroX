@@ -11,6 +11,7 @@ struct SettingsSheet: View {
 
     @State private var keyTestResult: String? = nil
     @State private var keyTesting    = false
+    @State private var showKey       = false
 
     var body: some View {
         ZStack {
@@ -106,26 +107,61 @@ struct SettingsSheet: View {
                                         Text("\(apiKey.count) chars")
                                             .font(Metro.labelSm(size: 10))
                                             .foregroundStyle(Metro.onSurfaceVariant.opacity(0.6))
+                                        // Show/hide toggle
+                                        Button {
+                                            showKey.toggle()
+                                        } label: {
+                                            Image(systemName: showKey ? "eye.slash" : "eye")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(Metro.onSurfaceVariant)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .padding(.leading, 8)
+                                        // Clear button — lets users wipe and re-paste cleanly
+                                        Button {
+                                            apiKey = ""
+                                            keyTestResult = nil
+                                            showKey = false
+                                            ElevenLabsService.clearCache()
+                                        } label: {
+                                            Text("CLEAR")
+                                                .font(Metro.labelSm(size: 10))
+                                                .foregroundStyle(Color(metroHex: "#ffb4ab"))
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 3)
+                                                .overlay(Rectangle().stroke(Color(metroHex: "#ffb4ab"), lineWidth: 1))
+                                        }
+                                        .buttonStyle(.plain)
+                                        .padding(.leading, 4)
                                     }
                                 }
-                                SecureField("", text: $apiKey,
-                                    prompt: Text("Paste key here…").foregroundStyle(Metro.onSurfaceVariant))
-                                    .onChange(of: apiKey) { old, v in
-                                        let trimmed = v.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        if trimmed != v { apiKey = trimmed }
-                                        if !old.isEmpty && old != trimmed { ElevenLabsService.clearCache() }
-                                        keyTestResult = nil
+
+                                // Visible or hidden key field
+                                Group {
+                                    if showKey {
+                                        TextField("", text: $apiKey,
+                                            prompt: Text("Paste key here…").foregroundStyle(Metro.onSurfaceVariant))
+                                    } else {
+                                        SecureField("", text: $apiKey,
+                                            prompt: Text("Paste key here…").foregroundStyle(Metro.onSurfaceVariant))
                                     }
-                                    .foregroundStyle(Metro.onSurface)
-                                    .font(Metro.bodyMd())
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                                    .padding(.vertical, 10)
-                                    .overlay(alignment: .bottom) {
-                                        Rectangle()
-                                            .fill(apiKey.isEmpty ? Metro.outlineVariant : Metro.primary)
-                                            .frame(height: 2)
-                                    }
+                                }
+                                .onChange(of: apiKey) { old, v in
+                                    let trimmed = v.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    if trimmed != v { apiKey = trimmed }
+                                    if !old.isEmpty && old != trimmed { ElevenLabsService.clearCache() }
+                                    keyTestResult = nil
+                                }
+                                .foregroundStyle(Metro.onSurface)
+                                .font(.system(size: 13, weight: .regular, design: .monospaced))
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .padding(.vertical, 10)
+                                .overlay(alignment: .bottom) {
+                                    Rectangle()
+                                        .fill(apiKey.isEmpty ? Metro.outlineVariant : Metro.primary)
+                                        .frame(height: 2)
+                                }
 
                                 // Test Key button + result
                                 if !apiKey.isEmpty {
