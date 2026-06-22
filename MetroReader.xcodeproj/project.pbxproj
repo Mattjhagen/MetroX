@@ -24,6 +24,7 @@
 		9BF2418917701CA1952B71C6 /* ContentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34DC2B5D265EE8C28362DE51 /* ContentProvider.swift */; };
 		A913299379AA511AC5B26CCC /* Book.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809C0376B6A05B4876CF76C8 /* Book.swift */; };
 		AB2AB771585A79BEA569FA0C /* BookSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2280A9818EF6697F45322609 /* BookSanitizer.swift */; };
+		CD505B29F26F0098AF2609C8 /* MetroDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 572E15D899B0FC5250C05C05 /* MetroDesign.swift */; };
 		E6DF1D12C9497E8EB1DF21C8 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EFBEBDCE306E48A1F3E3BBC /* LibraryView.swift */; };
 		EBD2C390F9EE8A25D1650C24 /* ReadingSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DAFF93884E0729548142007 /* ReadingSettings.swift */; };
 		F5EE4EFECA08333EB5BC7FD5 /* BookValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AF29FB85835EEE9C028B17 /* BookValidation.swift */; };
@@ -40,6 +41,7 @@
 		330412DA3563F2BB7058ABAB /* ReaderContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderContainerView.swift; sourceTree = "<group>"; };
 		34DC2B5D265EE8C28362DE51 /* ContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProvider.swift; sourceTree = "<group>"; };
 		3A85D41222AC595326B0EE66 /* MetroReader.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MetroReader.entitlements; sourceTree = "<group>"; };
+		572E15D899B0FC5250C05C05 /* MetroDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroDesign.swift; sourceTree = "<group>"; };
 		57E0FF88049335E3868BD9FC /* ReaderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModel.swift; sourceTree = "<group>"; };
 		5F3FD05153C3379B7E7A0DDB /* HTMLStripper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLStripper.swift; sourceTree = "<group>"; };
 		6DBB123D8095DBCF26FE858E /* PDFProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFProvider.swift; sourceTree = "<group>"; };
@@ -50,7 +52,7 @@
 		A29AD92DFB4AD5D2A3E8118F /* EPUBParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBParser.swift; sourceTree = "<group>"; };
 		A31E634410FE778C1F0C31F9 /* BookTileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookTileView.swift; sourceTree = "<group>"; };
 		A5962AD1D4D910FB0FA467A4 /* MetroReaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetroReaderApp.swift; sourceTree = "<group>"; };
-		B3E5A3518239EA95413C8566 /* MetroReader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetroReader.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E5A3518239EA95413C8566 /* MetroReader.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MetroReader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB05437841B3AF7F1D768C6E /* ElevenLabsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsService.swift; sourceTree = "<group>"; };
 		E05DCE87236AA40B279E0D14 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		E1AF29FB85835EEE9C028B17 /* BookValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookValidation.swift; sourceTree = "<group>"; };
@@ -113,6 +115,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		A27CEEEB18DD206EE7169303 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				572E15D899B0FC5250C05C05 /* MetroDesign.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
 		A2B2E6A5931098F806C9CF2F /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -146,6 +156,7 @@
 				1DA2636804E179115E295693 /* Info.plist */,
 				3A85D41222AC595326B0EE66 /* MetroReader.entitlements */,
 				A5962AD1D4D910FB0FA467A4 /* MetroReaderApp.swift */,
+				A27CEEEB18DD206EE7169303 /* Design */,
 				946F4575BAA0A192625A8A60 /* Models */,
 				AD46B6501C8C22616F0B9992 /* Providers */,
 				8B16F99E94E46CE3C918450C /* Services */,
@@ -200,6 +211,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					0F5B82264DE88170EF17ED9A = {
+						DevelopmentTeam = "";
+					};
+				};
 			};
 			buildConfigurationList = 8E1657DF2123D97EBE770D7F /* Build configuration list for PBXProject "MetroReader" */;
 			developmentRegion = en;
@@ -251,6 +267,7 @@
 				0EC46E653C5EF1C766E16DE9 /* HTMLStripper.swift in Sources */,
 				E6DF1D12C9497E8EB1DF21C8 /* LibraryView.swift in Sources */,
 				41E941F7953755DB51B22383 /* LibraryViewModel.swift in Sources */,
+				CD505B29F26F0098AF2609C8 /* MetroDesign.swift in Sources */,
 				68CB4A7557C1203566CFA7A8 /* MetroReaderApp.swift in Sources */,
 				5A3E884C96F8F3EDDD866B48 /* PDFProvider.swift in Sources */,
 				066BC8C1A214061E860A27F9 /* ReaderContainerView.swift in Sources */,
@@ -326,7 +343,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MetroReader/MetroReader.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = WZMXKCK98R;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = MetroReader/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -410,7 +427,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = MetroReader/MetroReader.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = WZMXKCK98R;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = MetroReader/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

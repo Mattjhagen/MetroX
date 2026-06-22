@@ -4,79 +4,203 @@ struct SettingsSheet: View {
     @ObservedObject var settings: ReadingSettings
     @Environment(\.dismiss) private var dismiss
 
-    @AppStorage("elevenLabsAPIKey")    private var apiKey:             String = ""
-    @AppStorage("elevenLabsVoiceID")   private var voiceID:            String = ElevenLabsVoice.default.id
+    @AppStorage("elevenLabsAPIKey")    private var apiKey:              String = ""
+    @AppStorage("elevenLabsVoiceID")   private var voiceID:             String = ElevenLabsVoice.default.id
     @AppStorage("audioFollowsReading") private var audioFollowsReading: Bool   = false
     @AppStorage("ttsHighlightEnabled") private var ttsHighlightEnabled: Bool   = false
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Theme") {
-                    Picker("Theme", selection: $settings.themeRaw) {
-                        ForEach(ReadingTheme.allCases, id: \.rawValue) {
-                            Text($0.rawValue).tag($0.rawValue)
+        ZStack {
+            Metro.background.ignoresSafeArea()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: Metro.gap) {
+                    // Header
+                    HStack {
+                        Text("READING\nSETTINGS")
+                            .font(Metro.headlineLg())
+                            .foregroundStyle(Metro.primary)
+                            .lineLimit(2)
+                        Spacer()
+                        Button { dismiss() } label: {
+                            Text("DONE")
+                                .font(Metro.labelSm(size: 14))
+                                .foregroundStyle(Metro.background)
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 10)
+                                .background(Metro.primary)
                         }
+                        .buttonStyle(.plain)
                     }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                }
+                    .padding(.horizontal, Metro.margin)
+                    .padding(.top, 32)
 
-                Section("Text Size") {
-                    Picker("Font Size", selection: $settings.fontSizeRaw) {
-                        ForEach(FontSize.allCases, id: \.rawValue) {
-                            Text($0.rawValue).tag($0.rawValue)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                }
-
-                Section("Margins") {
-                    Picker("Margin", selection: $settings.marginRaw) {
-                        ForEach(Margin.allCases, id: \.rawValue) {
-                            Text($0.rawValue).tag($0.rawValue)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                }
-
-                Section {
-                    SecureField("Paste API key here", text: $apiKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-
-                    if !apiKey.isEmpty {
-                        Picker("Voice", selection: $voiceID) {
-                            ForEach(ElevenLabsVoice.catalog) { voice in
-                                Text(voice.name).tag(voice.id)
+                    // Theme
+                    sectionBlock(label: "THEME") {
+                        HStack(spacing: Metro.gap) {
+                            ForEach(ReadingTheme.allCases, id: \.rawValue) { theme in
+                                let active = settings.themeRaw == theme.rawValue
+                                Button { settings.themeRaw = theme.rawValue } label: {
+                                    Text(theme.rawValue.uppercased())
+                                        .font(Metro.labelSm(size: 13))
+                                        .foregroundStyle(active ? Metro.background : Metro.onSurface)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(active ? Metro.primary : Metro.surfaceContHigh)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
+                    }
 
-                        Toggle("Audio follows reading", isOn: $audioFollowsReading)
-                        Toggle("Highlight while reading", isOn: $ttsHighlightEnabled)
-
-                        Button("Clear Audio Cache", role: .destructive) {
-                            ElevenLabsService.clearCache()
+                    // Font Size
+                    sectionBlock(label: "TEXT SIZE") {
+                        HStack(spacing: Metro.gap) {
+                            ForEach(FontSize.allCases, id: \.rawValue) { size in
+                                let active = settings.fontSizeRaw == size.rawValue
+                                Button { settings.fontSizeRaw = size.rawValue } label: {
+                                    Text(size.rawValue.uppercased())
+                                        .font(Metro.labelSm(size: 13))
+                                        .foregroundStyle(active ? Metro.background : Metro.onSurface)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(active ? Metro.primary : Metro.surfaceContHigh)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
-                } header: {
-                    Text("ElevenLabs TTS")
-                } footer: {
-                    if apiKey.isEmpty {
-                        Text("Add an ElevenLabs API key to enable read-aloud. A play button appears in the reader toolbar.")
+
+                    // Margins
+                    sectionBlock(label: "MARGINS") {
+                        HStack(spacing: Metro.gap) {
+                            ForEach(Margin.allCases, id: \.rawValue) { margin in
+                                let active = settings.marginRaw == margin.rawValue
+                                Button { settings.marginRaw = margin.rawValue } label: {
+                                    Text(margin.rawValue.uppercased())
+                                        .font(Metro.labelSm(size: 13))
+                                        .foregroundStyle(active ? Metro.background : Metro.onSurface)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(active ? Metro.primary : Metro.surfaceContHigh)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
-                }
-            }
-            .navigationTitle("Reading Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+
+                    // ElevenLabs TTS
+                    sectionBlock(label: "ELEVENLABS TTS") {
+                        VStack(alignment: .leading, spacing: 0) {
+                            // API Key input
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("API KEY")
+                                    .font(Metro.labelSm(size: 10))
+                                    .foregroundStyle(Metro.onSurfaceVariant)
+                                SecureField("", text: $apiKey,
+                                    prompt: Text("Paste key here…").foregroundStyle(Metro.onSurfaceVariant))
+                                    .foregroundStyle(Metro.onSurface)
+                                    .font(Metro.bodyMd())
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .padding(.vertical, 10)
+                                    .overlay(alignment: .bottom) {
+                                        Rectangle()
+                                            .fill(apiKey.isEmpty ? Metro.outlineVariant : Metro.primary)
+                                            .frame(height: 2)
+                                    }
+                            }
+                            .padding(.bottom, 16)
+
+                            if !apiKey.isEmpty {
+                                // Voice picker
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("VOICE")
+                                        .font(Metro.labelSm(size: 10))
+                                        .foregroundStyle(Metro.onSurfaceVariant)
+                                    Picker("Voice", selection: $voiceID) {
+                                        ForEach(ElevenLabsVoice.catalog) { voice in
+                                            Text(voice.name.uppercased()).tag(voice.id)
+                                        }
+                                    }
+                                    .pickerStyle(.menu)
+                                    .tint(Metro.primary)
+                                    .padding(.vertical, 4)
+                                    .overlay(alignment: .bottom) {
+                                        Rectangle().fill(Metro.outlineVariant).frame(height: 1)
+                                    }
+                                }
+                                .padding(.bottom, 16)
+
+                                // Toggles
+                                settingsToggle("AUDIO FOLLOWS READING", isOn: $audioFollowsReading)
+                                    .padding(.bottom, 12)
+                                settingsToggle("HIGHLIGHT WHILE READING", isOn: $ttsHighlightEnabled)
+                                    .padding(.bottom, 16)
+
+                                // Clear cache
+                                Button {
+                                    ElevenLabsService.clearCache()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "trash")
+                                            .font(.system(size: 13))
+                                        Text("CLEAR AUDIO CACHE")
+                                            .font(Metro.labelSm(size: 13))
+                                    }
+                                    .foregroundStyle(Color(metroHex: "#ffb4ab"))
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity)
+                                    .overlay(
+                                        Rectangle().stroke(Color(metroHex: "#ffb4ab"), lineWidth: 2)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Text("Add an API key to enable read-aloud. A play button will appear in the reader toolbar.")
+                                    .font(Metro.bodyMd())
+                                    .foregroundStyle(Metro.onSurfaceVariant)
+                            }
+                        }
+                    }
+
+                    Spacer().frame(height: 40)
                 }
             }
         }
         .presentationDetents([.medium, .large])
+        .presentationBackground(Metro.background)
+    }
+
+    // MARK: - Components
+
+    private func sectionBlock<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(label)
+                .font(Metro.labelSm())
+                .foregroundStyle(Metro.primary)
+            content()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Metro.surfaceCont)
+        .padding(.horizontal, Metro.margin)
+    }
+
+    private func settingsToggle(_ label: String, isOn: Binding<Bool>) -> some View {
+        HStack {
+            Text(label)
+                .font(Metro.labelSm(size: 13))
+                .foregroundStyle(Metro.onSurface)
+            Spacer()
+            Toggle("", isOn: isOn)
+                .tint(Metro.primaryContainer)
+                .labelsHidden()
+        }
+        .padding(.bottom, 4)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Metro.outlineVariant).frame(height: 1)
+        }
     }
 }
+
