@@ -94,17 +94,7 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
 
     private func synthesizeAndPlay(text: String, chunkKey: String) async {
-        // Read fresh from UserDefaults at call time — @AppStorage can lag
-        // behind when the value is set in a different view context.
-        let rawStored = UserDefaults.standard.string(forKey: "elevenLabsAPIKey")
-        print("[MetroReader] synthesize — rawStored len=\(rawStored?.count ?? -1) prefix=\(String((rawStored ?? "").prefix(6)))")
-        let liveKey = (rawStored ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let liveVoice = (UserDefaults.standard.string(forKey: "elevenLabsVoiceID") ?? voiceID)
-        print("[MetroReader] synthesize — liveKey len=\(liveKey.count) voice=\(liveVoice)")
-
-        guard !liveKey.isEmpty else {
-            print("[MetroReader] synthesize — ABORT: key is empty")
+        guard !apiKey.isEmpty else {
             error = ElevenLabsError.noAPIKey.errorDescription
             return
         }
@@ -117,13 +107,13 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
             let audioData: Data
             if highlightEnabled {
                 let (data, timings) = try await ElevenLabsService.synthesizeWithTimings(
-                    text: truncated, apiKey: liveKey, voiceID: liveVoice
+                    text: truncated, apiKey: apiKey, voiceID: voiceID
                 )
                 audioData = data
                 wordTimings = timings
             } else {
                 audioData = try await ElevenLabsService.synthesize(
-                    text: truncated, apiKey: liveKey, voiceID: liveVoice
+                    text: truncated, apiKey: apiKey, voiceID: voiceID
                 )
                 wordTimings = []
             }
@@ -134,10 +124,8 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
                 .appendingPathComponent("\(chunkKey).mp3")
             try audioData.write(to: tmp)
 
-            try await Task.detached(priority: .userInitiated) {
-                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-                try AVAudioSession.sharedInstance().setActive(true)
-            }.value
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+            try AVAudioSession.sharedInstance().setActive(true)
 
             let p = try AVAudioPlayer(contentsOf: tmp)
             p.delegate = self

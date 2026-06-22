@@ -29,60 +29,14 @@ struct WordTiming {
 
 enum ElevenLabsError: LocalizedError {
     case noAPIKey
-    case unauthorized           // 401
-    case forbidden              // 403
-    case voiceNotFound          // 404
-    case rateLimited            // 429
     case httpError(Int)
     case noData
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey:       return "ElevenLabs API key is missing. Add it in Settings."
-        case .unauthorized:   return "ElevenLabs: Invalid API key (401). Tap the eye icon in Settings to see what's stored, then CLEAR and re-paste."
-        case .forbidden:      return "ElevenLabs: Access denied (403). Check your plan limits."
-        case .voiceNotFound:  return "ElevenLabs: Voice not found (404). Try a different voice in Settings."
-        case .rateLimited:    return "ElevenLabs: Rate limit hit (429). Wait a moment and try again."
-        case .httpError(let c): return "ElevenLabs error \(c). Check Settings."
-        case .noData:         return "ElevenLabs returned an empty response."
-        }
-    }
-}
-
-extension ElevenLabsError {
-    static func from(statusCode: Int) -> ElevenLabsError {
-        switch statusCode {
-        case 401: return .unauthorized
-        case 403: return .forbidden
-        case 404: return .voiceNotFound
-        case 429: return .rateLimited
-        default:  return .httpError(statusCode)
-        }
-    }
-}
-
-// MARK: - Key validation
-
-extension ElevenLabsService {
-    /// Validates the key by hitting /v1/voices — accessible with any valid key including
-    /// restricted TTS-only keys. /v1/user requires full account scope and will 401 for
-    /// restricted keys even when TTS synthesis would succeed.
-    static func validateKey(_ key: String) async -> String? {
-        let trimmed = key
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .filter { $0.isASCII && !$0.isWhitespace }
-        guard !trimmed.isEmpty else { return "Key is empty." }
-        var req = URLRequest(url: URL(string: "https://api.elevenlabs.io/v1/voices")!)
-        req.setValue(trimmed, forHTTPHeaderField: "xi-api-key")
-        do {
-            let (_, response) = try await URLSession.shared.data(for: req)
-            if let http = response as? HTTPURLResponse {
-                if http.statusCode == 200 { return nil }
-                return ElevenLabsError.from(statusCode: http.statusCode).localizedDescription
-            }
-            return "Unexpected response."
-        } catch {
-            return error.localizedDescription
+        case .noAPIKey:         return "ElevenLabs API key is missing. Add it in Settings."
+        case .httpError(let c): return "ElevenLabs returned HTTP \(c). Check your API key."
+        case .noData:           return "ElevenLabs returned an empty response."
         }
     }
 }
@@ -196,10 +150,7 @@ enum ElevenLabsService {
             : "https://api.elevenlabs.io/v1/text-to-speech/\(voiceID)"
         var request = URLRequest(url: URL(string: path)!)
         request.httpMethod = "POST"
-        let cleanKey = apiKey
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .filter { $0.isASCII && !$0.isWhitespace }
-        request.setValue(cleanKey, forHTTPHeaderField: "xi-api-key")
+        request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if !withTimestamps {
             request.setValue("audio/mpeg", forHTTPHeaderField: "Accept")
@@ -212,13 +163,8 @@ enum ElevenLabsService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse {
-            print("[MetroReader] ElevenLabs HTTP \(http.statusCode) url=\(path)")
-            if !(200..<300).contains(http.statusCode) {
-                let body = String(data: data, encoding: .utf8) ?? "<binary>"
-                print("[MetroReader] ElevenLabs error body: \(body)")
-                throw ElevenLabsError.from(statusCode: http.statusCode)
-            }
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            throw ElevenLabsError.httpError(http.statusCode)
         }
         guard !data.isEmpty else { throw ElevenLabsError.noData }
         return data

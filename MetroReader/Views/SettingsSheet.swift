@@ -1,8 +1,4 @@
 import SwiftUI
-import UIKit
-#if targetEnvironment(macCatalyst)
-import AppKit
-#endif
 
 struct SettingsSheet: View {
     @ObservedObject var settings: ReadingSettings
@@ -12,10 +8,6 @@ struct SettingsSheet: View {
     @AppStorage("elevenLabsVoiceID")   private var voiceID:             String = ElevenLabsVoice.default.id
     @AppStorage("audioFollowsReading") private var audioFollowsReading: Bool   = false
     @AppStorage("ttsHighlightEnabled") private var ttsHighlightEnabled: Bool   = false
-
-    @State private var keyTestResult: String? = nil
-    @State private var keyTesting    = false
-    @State private var showKey       = false
 
     var body: some View {
         ZStack {
@@ -100,150 +92,35 @@ struct SettingsSheet: View {
                     // ElevenLabs TTS
                     sectionBlock(label: "ELEVENLABS TTS") {
                         VStack(alignment: .leading, spacing: 0) {
-                            // API Key section
-                            VStack(alignment: .leading, spacing: 10) {
-
-                                // Step 1 — open ElevenLabs in Safari
-                                Button {
-                                    UIApplication.shared.open(
-                                        URL(string: "https://elevenlabs.io/app/settings/api-keys")!
-                                    )
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "safari")
-                                            .font(.system(size: 13))
-                                        Text("OPEN ELEVENLABS API KEYS →")
-                                            .font(Metro.labelSm(size: 12))
-                                    }
-                                    .foregroundStyle(Metro.primary)
-                                    .frame(maxWidth: .infinity)
+                            // API Key — plain SecureField, same as original working version
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("API KEY")
+                                    .font(Metro.labelSm(size: 10))
+                                    .foregroundStyle(Metro.onSurfaceVariant)
+                                SecureField("Paste ElevenLabs key here", text: $apiKey)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                                    .foregroundStyle(Metro.onSurface)
+                                    .font(.system(size: 13, weight: .regular, design: .monospaced))
                                     .padding(.vertical, 10)
-                                    .overlay(Rectangle().stroke(Metro.primary, lineWidth: 2))
-                                }
-                                .buttonStyle(.plain)
-
-                                // Step 2 — paste from clipboard (plain string, no RTF)
-                                Button {
-                                    #if targetEnvironment(macCatalyst)
-                                    let raw = NSPasteboard.general.string(forType: .string)
-                                    #else
-                                    let raw = UIPasteboard.general.string
-                                    #endif
-                                    print("[MetroReader] clipboard raw: \(raw?.debugDescription ?? "nil")")
-                                    if let pasted = raw {
-                                        let cleaned = pasted
-                                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                                            .filter { $0.isASCII && !$0.isWhitespace }
-                                        print("[MetroReader] cleaned key len=\(cleaned.count) prefix=\(String(cleaned.prefix(6)))")
-                                        if !cleaned.isEmpty {
-                                            apiKey = cleaned
-                                            keyTestResult = nil
-                                            ElevenLabsService.clearCache()
-                                        } else {
-                                            keyTestResult = "Clipboard was empty or had no valid characters."
-                                        }
-                                    } else {
-                                        keyTestResult = "Nothing on clipboard — copy your key first."
+                                    .overlay(alignment: .bottom) {
+                                        Rectangle()
+                                            .fill(apiKey.isEmpty ? Metro.outlineVariant : Metro.primary)
+                                            .frame(height: 2)
                                     }
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "doc.on.clipboard")
-                                            .font(.system(size: 13))
-                                        Text("PASTE KEY FROM CLIPBOARD")
-                                            .font(Metro.labelSm(size: 12))
-                                    }
-                                    .foregroundStyle(Metro.background)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(Metro.primary)
-                                }
-                                .buttonStyle(.plain)
-
-                                // Stored key status
                                 if !apiKey.isEmpty {
-                                    HStack {
-                                        Image(systemName: "key.fill")
-                                            .font(.system(size: 11))
-                                            .foregroundStyle(Metro.secondary)
-                                        Text("KEY STORED — \(apiKey.count) CHARS")
-                                            .font(Metro.labelSm(size: 11))
-                                            .foregroundStyle(Metro.secondary)
-                                        Spacer()
-                                        // Show/hide
-                                        Button { showKey.toggle() } label: {
-                                            Image(systemName: showKey ? "eye.slash" : "eye")
-                                                .font(.system(size: 12))
-                                                .foregroundStyle(Metro.onSurfaceVariant)
-                                        }
-                                        .buttonStyle(.plain)
-                                        // Clear
-                                        Button {
-                                            apiKey = ""
-                                            keyTestResult = nil
-                                            showKey = false
-                                            ElevenLabsService.clearCache()
-                                        } label: {
-                                            Text("CLEAR")
-                                                .font(Metro.labelSm(size: 10))
-                                                .foregroundStyle(Color(metroHex: "#ffb4ab"))
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 3)
-                                                .overlay(Rectangle().stroke(Color(metroHex: "#ffb4ab"), lineWidth: 1))
-                                        }
-                                        .buttonStyle(.plain)
-                                        .padding(.leading, 4)
+                                    Button {
+                                        apiKey = ""
+                                        ElevenLabsService.clearCache()
+                                    } label: {
+                                        Text("CLEAR KEY")
+                                            .font(Metro.labelSm(size: 10))
+                                            .foregroundStyle(Color(metroHex: "#ffb4ab"))
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
+                                            .overlay(Rectangle().stroke(Color(metroHex: "#ffb4ab"), lineWidth: 1))
                                     }
-
-                                    // Reveal field (optional, read-only-ish)
-                                    if showKey {
-                                        Text(apiKey)
-                                            .font(.system(size: 11, weight: .regular, design: .monospaced))
-                                            .foregroundStyle(Metro.onSurfaceVariant)
-                                            .lineLimit(3)
-                                            .padding(.vertical, 6)
-                                            .overlay(alignment: .bottom) {
-                                                Rectangle().fill(Metro.outlineVariant).frame(height: 1)
-                                            }
-                                    }
-
-                                    // Test button
-                                    HStack(spacing: 8) {
-                                        Button {
-                                            keyTesting = true
-                                            keyTestResult = nil
-                                            Task {
-                                                let result = await ElevenLabsService.validateKey(apiKey)
-                                                keyTestResult = result ?? "✓ Key is valid"
-                                                keyTesting = false
-                                            }
-                                        } label: {
-                                            HStack(spacing: 6) {
-                                                if keyTesting {
-                                                    ProgressView().scaleEffect(0.7).tint(Metro.background)
-                                                } else {
-                                                    Image(systemName: "antenna.radiowaves.left.and.right")
-                                                        .font(.system(size: 11))
-                                                }
-                                                Text(keyTesting ? "TESTING…" : "TEST KEY")
-                                                    .font(Metro.labelSm(size: 11))
-                                            }
-                                            .foregroundStyle(Metro.background)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 7)
-                                            .background(Metro.primary)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .disabled(keyTesting)
-
-                                        if let result = keyTestResult {
-                                            Text(result)
-                                                .font(Metro.labelSm(size: 11))
-                                                .foregroundStyle(
-                                                    result.hasPrefix("✓") ? Metro.secondary : Color(metroHex: "#ffb4ab")
-                                                )
-                                                .lineLimit(2)
-                                        }
-                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                             .padding(.bottom, 16)
