@@ -121,15 +121,22 @@ struct SettingsSheet: View {
 
                                 // Step 2 — paste from clipboard (plain string, no RTF)
                                 Button {
-                                    if let pasted = UIPasteboard.general.string {
+                                    let raw = UIPasteboard.general.string
+                                    print("[MetroReader] clipboard raw: \(raw?.debugDescription ?? "nil")")
+                                    if let pasted = raw {
                                         let cleaned = pasted
                                             .trimmingCharacters(in: .whitespacesAndNewlines)
                                             .filter { $0.isASCII && !$0.isWhitespace }
+                                        print("[MetroReader] cleaned key len=\(cleaned.count) prefix=\(String(cleaned.prefix(6)))")
                                         if !cleaned.isEmpty {
                                             apiKey = cleaned
                                             keyTestResult = nil
                                             ElevenLabsService.clearCache()
+                                        } else {
+                                            keyTestResult = "Clipboard was empty or had no valid characters."
                                         }
+                                    } else {
+                                        keyTestResult = "Nothing on clipboard — copy your key first."
                                     }
                                 } label: {
                                     HStack {

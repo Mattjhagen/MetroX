@@ -212,8 +212,13 @@ enum ElevenLabsService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw ElevenLabsError.from(statusCode: http.statusCode)
+        if let http = response as? HTTPURLResponse {
+            print("[MetroReader] ElevenLabs HTTP \(http.statusCode) url=\(path)")
+            if !(200..<300).contains(http.statusCode) {
+                let body = String(data: data, encoding: .utf8) ?? "<binary>"
+                print("[MetroReader] ElevenLabs error body: \(body)")
+                throw ElevenLabsError.from(statusCode: http.statusCode)
+            }
         }
         guard !data.isEmpty else { throw ElevenLabsError.noData }
         return data

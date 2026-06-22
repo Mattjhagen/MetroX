@@ -96,11 +96,15 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
     private func synthesizeAndPlay(text: String, chunkKey: String) async {
         // Read fresh from UserDefaults at call time — @AppStorage can lag
         // behind when the value is set in a different view context.
-        let liveKey = (UserDefaults.standard.string(forKey: "elevenLabsAPIKey") ?? "")
+        let rawStored = UserDefaults.standard.string(forKey: "elevenLabsAPIKey")
+        print("[MetroReader] synthesize — rawStored len=\(rawStored?.count ?? -1) prefix=\(String((rawStored ?? "").prefix(6)))")
+        let liveKey = (rawStored ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let liveVoice = (UserDefaults.standard.string(forKey: "elevenLabsVoiceID") ?? voiceID)
+        print("[MetroReader] synthesize — liveKey len=\(liveKey.count) voice=\(liveVoice)")
 
         guard !liveKey.isEmpty else {
+            print("[MetroReader] synthesize — ABORT: key is empty")
             error = ElevenLabsError.noAPIKey.errorDescription
             return
         }
