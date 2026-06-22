@@ -10,6 +10,8 @@ struct LibraryView: View {
     @State private var bookToDelete: Book?
     @State private var showSearch = false
     @State private var showSortSheet = false
+    @State private var selectedFormat: String? = nil
+    @State private var activeCategory: String? = nil  // "recent" | "audio" | nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -111,10 +113,12 @@ struct LibraryView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        let books = vm.filteredBooks(allBooks)
+        let base = vm.filteredBooks(allBooks)
+        let books = applyFilters(base)
 
-        // Continue Reading featured tile
-        if let active = vm.activeBook(from: books) {
+        // Continue Reading featured tile (only when no filter active)
+        if activeCategory == nil, selectedFormat == nil,
+           let active = vm.activeBook(from: base) {
             continueTile(active)
         }
 
@@ -124,12 +128,67 @@ struct LibraryView: View {
         // Format filter strip
         formatFilters
 
+        // Active filter label
+        if activeCategory != nil || selectedFormat != nil {
+            activeFilterBanner
+        }
+
         // Book grid or empty state
         if books.isEmpty {
             emptyState
         } else {
             bookGrid(books)
         }
+    }
+
+    private func applyFilters(_ books: [Book]) -> [Book] {
+        var result = books
+        if let fmt = selectedFormat {
+            result = result.filter { $0.fileURL.pathExtension.lowercased() == fmt }
+        }
+        switch activeCategory {
+        case "recent":
+            let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+            result = result.filter { $0.importedDate >= cutoff }
+        case "audio":
+            result = result.filter { $0.fileURL.pathExtension.lowercased() == "epub" }
+        default:
+            break
+        }
+        return result
+    }
+
+    private var activeFilterBanner: some View {
+        HStack {
+            let label: String = {
+                if activeCategory == "recent" { return "RECENT IMPORTS" }
+                if activeCategory == "audio"  { return "AUDIO BOOKS" }
+                if let f = selectedFormat      { return f.uppercased() }
+                return ""
+            }()
+            Text("SHOWING: \(label)")
+                .font(Metro.labelSm())
+                .foregroundStyle(Metro.primary)
+            Spacer()
+            Button {
+                activeCategory = nil
+                selectedFormat = nil
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("CLEAR")
+                        .font(Metro.labelSm(size: 11))
+                }
+                .foregroundStyle(Metro.background)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Metro.primary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, Metro.margin)
+        .padding(.bottom, Metro.gap)
     }
 
     // MARK: - Continue Reading
@@ -184,11 +243,13 @@ struct LibraryView: View {
         HStack(spacing: Metro.gap) {
             categoryTile(
                 lines: "RECENT\nIMPORTS", icon: "clock.arrow.circlepath",
-                bg: Metro.secondary, fg: Metro.onSecondary, number: "01"
+                bg: Metro.secondary, fg: Metro.onSecondary, number: "01",
+                category: "recent"
             )
             categoryTile(
                 lines: "AUDIO\nBOOKS", icon: "headphones",
-                bg: Metro.tertiary, fg: Metro.onTertiary, number: "02"
+                bg: Metro.tertiary, fg: Metro.onTertiary, number: "02",
+                category: "audio"
             )
         }
         .padding(.horizontal, Metro.margin)
@@ -197,34 +258,45 @@ struct LibraryView: View {
 
     private func categoryTile(
         lines: String, icon: String,
-        bg: Color, fg: Color, number: String
+        bg: Color, fg: Color, number: String,
+        category: String
     ) -> some View {
-        ZStack {
-            bg
-            VStack(alignment: .leading) {
-                HStack {
-                    Image(systemName: icon)
-                        .font(.system(size: 26, weight: .medium))
-                        .foregroundStyle(fg)
-                    Spacer()
-                    Text(number)
-                        .font(Metro.labelSm())
-                        .foregroundStyle(fg.opacity(0.6))
-                }
-                Spacer()
-                Text(lines)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(fg)
-                    .lineLimit(2)
+        let isActive = activeCategory == category
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                activeCategory = isActive ? nil : category
+                selectedFormat = nil
             }
-            .padding(12)
+        } label: {
+            ZStack {
+                isActive ? fg : bg
+                VStack(alignment: .leading) {
+                    HStack {
+                        Image(systemName: icon)
+                            .font(.system(size: 26, weight: .medium))
+                            .foregroundStyle(isActive ? bg : fg)
+                        Spacer()
+                        Text(number)
+                            .font(Metro.labelSm())
+                            .foregroundStyle((isActive ? bg : fg).opacity(0.6))
+                    }
+                    Spacer()
+                    Text(lines)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(isActive ? bg : fg)
+                        .lineLimit(2)
+                }
+                .padding(12)
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .overlay(
+                isActive ? Rectangle().stroke(fg, lineWidth: 3) : nil
+            )
         }
-        .aspectRatio(1, contentMode: .fit)
+        .buttonStyle(.plain)
     }
 
     // MARK: - Format Filters
-
-    @State private var selectedFormat: String? = nil
 
     private var formatFilters: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -248,7 +320,10 @@ struct LibraryView: View {
     private func filterChip(_ format: String?, label: String) -> some View {
         let active = selectedFormat == format
         return Button {
-            selectedFormat = active ? nil : format
+            withAnimation(.easeInOut(duration: 0.15)) {
+                selectedFormat = active ? nil : format
+                activeCategory = nil
+            }
         } label: {
             Text(label)
                 .font(Metro.labelSm(size: 13))
@@ -271,11 +346,13 @@ struct LibraryView: View {
                     GridItem(.flexible(), spacing: Metro.gap)]
         return LazyVGrid(columns: cols, spacing: Metro.gap) {
             ForEach(books) { book in
-                BookTileView(book: book, isHero: false)
-                    .onTapGesture { openBook(book) }
-                    .contextMenu {
-                        Button("Delete", role: .destructive) { bookToDelete = book }
-                    }
+                Button { openBook(book) } label: {
+                    BookTileView(book: book, isHero: false)
+                }
+                .buttonStyle(.plain)
+                .contextMenu {
+                    Button("Delete", role: .destructive) { bookToDelete = book }
+                }
             }
         }
         .padding(.horizontal, Metro.margin)
