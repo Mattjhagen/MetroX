@@ -64,11 +64,13 @@ extension ElevenLabsError {
 // MARK: - Key validation
 
 extension ElevenLabsService {
-    /// Pings /v1/user to verify the key is valid. Returns nil on success, error message on failure.
+    /// Validates the key by hitting /v1/voices — accessible with any valid key including
+    /// restricted TTS-only keys. /v1/user requires full account scope and will 401 for
+    /// restricted keys even when TTS synthesis would succeed.
     static func validateKey(_ key: String) async -> String? {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "Key is empty." }
-        var req = URLRequest(url: URL(string: "https://api.elevenlabs.io/v1/user")!)
+        var req = URLRequest(url: URL(string: "https://api.elevenlabs.io/v1/voices")!)
         req.setValue(trimmed, forHTTPHeaderField: "xi-api-key")
         do {
             let (_, response) = try await URLSession.shared.data(for: req)
