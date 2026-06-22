@@ -150,7 +150,8 @@ enum ElevenLabsService {
             : "https://api.elevenlabs.io/v1/text-to-speech/\(voiceID)"
         var request = URLRequest(url: URL(string: path)!)
         request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
+        request.setValue(apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
+                         forHTTPHeaderField: "xi-api-key")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if !withTimestamps {
             request.setValue("audio/mpeg", forHTTPHeaderField: "Accept")

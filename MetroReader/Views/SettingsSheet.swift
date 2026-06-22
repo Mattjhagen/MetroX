@@ -99,6 +99,13 @@ struct SettingsSheet: View {
                                     .foregroundStyle(Metro.onSurfaceVariant)
                                 SecureField("", text: $apiKey,
                                     prompt: Text("Paste key here…").foregroundStyle(Metro.onSurfaceVariant))
+                                    .onChange(of: apiKey) { old, v in
+                                        let trimmed = v.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if trimmed != v { apiKey = trimmed }
+                                        // Flush cached audio when the key changes so stale
+                                        // entries don't mask a newly-entered valid key.
+                                        if !old.isEmpty && old != trimmed { ElevenLabsService.clearCache() }
+                                    }
                                     .foregroundStyle(Metro.onSurface)
                                     .font(Metro.bodyMd())
                                     .textInputAutocapitalization(.never)
