@@ -124,8 +124,10 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
                 .appendingPathComponent("\(chunkKey).mp3")
             try audioData.write(to: tmp)
 
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
-            try AVAudioSession.sharedInstance().setActive(true)
+            try await Task.detached(priority: .userInitiated) {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+                try AVAudioSession.sharedInstance().setActive(true)
+            }.value
 
             let p = try AVAudioPlayer(contentsOf: tmp)
             p.delegate = self

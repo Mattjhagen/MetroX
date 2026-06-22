@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct ReaderContainerView: View {
     let book: Book
