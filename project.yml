@@ -1,0 +1,34 @@
+name: MetroReader
+options:
+  bundleIdPrefix: com.metroreader
+  deploymentTarget:
+    iOS: "17.0"
+  defaultConfig: Debug
+  xcodeVersion: "15"
+
+packages:
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation
+    from: "0.9.19"
+
+targets:
+  MetroReader:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - MetroReader
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.metroreader.app
+        SWIFT_VERSION: "5.9"
+        DEVELOPMENT_TEAM: ""
+        INFOPLIST_FILE: MetroReader/Info.plist
+        CODE_SIGN_ENTITLEMENTS: MetroReader/MetroReader.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "YES"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: ZIPFoundation
+    entitlements:
+      path: MetroReader/MetroReader.entitlements
