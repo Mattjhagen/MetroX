@@ -68,7 +68,9 @@ extension ElevenLabsService {
     /// restricted TTS-only keys. /v1/user requires full account scope and will 401 for
     /// restricted keys even when TTS synthesis would succeed.
     static func validateKey(_ key: String) async -> String? {
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = key
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .filter { $0.isASCII && !$0.isWhitespace }
         guard !trimmed.isEmpty else { return "Key is empty." }
         var req = URLRequest(url: URL(string: "https://api.elevenlabs.io/v1/voices")!)
         req.setValue(trimmed, forHTTPHeaderField: "xi-api-key")
@@ -194,8 +196,10 @@ enum ElevenLabsService {
             : "https://api.elevenlabs.io/v1/text-to-speech/\(voiceID)"
         var request = URLRequest(url: URL(string: path)!)
         request.httpMethod = "POST"
-        request.setValue(apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
-                         forHTTPHeaderField: "xi-api-key")
+        let cleanKey = apiKey
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .filter { $0.isASCII && !$0.isWhitespace }
+        request.setValue(cleanKey, forHTTPHeaderField: "xi-api-key")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if !withTimestamps {
             request.setValue("audio/mpeg", forHTTPHeaderField: "Accept")

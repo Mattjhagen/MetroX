@@ -147,9 +147,14 @@ struct SettingsSheet: View {
                                     }
                                 }
                                 .onChange(of: apiKey) { old, v in
-                                    let trimmed = v.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    if trimmed != v { apiKey = trimmed }
-                                    if !old.isEmpty && old != trimmed { ElevenLabsService.clearCache() }
+                                    // Strip all whitespace/newlines AND any non-ASCII/RTF
+                                    // characters that sneak in when pasting from Universal
+                                    // Clipboard (iOS→Mac copies text as rich RTF, not plain).
+                                    let cleaned = v
+                                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                                        .filter { $0.isASCII && !$0.isWhitespace }
+                                    if cleaned != v { apiKey = cleaned }
+                                    if !old.isEmpty && old != cleaned { ElevenLabsService.clearCache() }
                                     keyTestResult = nil
                                 }
                                 .foregroundStyle(Metro.onSurface)
