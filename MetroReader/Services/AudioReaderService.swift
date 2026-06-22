@@ -94,6 +94,7 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
 
     private func synthesizeAndPlay(text: String, chunkKey: String) async {
+        print("[MR] key len=\(apiKey.count) voice=\(voiceID)")
         guard !apiKey.isEmpty else {
             error = ElevenLabsError.noAPIKey.errorDescription
             return
