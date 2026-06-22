@@ -13,6 +13,7 @@ struct ReaderContainerView: View {
     @State private var showReaderOverlay = false
     @AppStorage("audioFollowsReading")  private var audioFollowsReading = false
     @AppStorage("ttsHighlightEnabled")  private var ttsHighlightEnabled = false
+    @AppStorage("elevenLabsAPIKey")     private var storedAPIKey: String = ""
 
     @State private var slideOffset: CGFloat = 0
     @State private var pageOpacity: Double  = 1.0
@@ -151,7 +152,7 @@ struct ReaderContainerView: View {
 
                         Spacer()
 
-                        if !audio.apiKey.isEmpty { audioButton }
+                        if !storedAPIKey.isEmpty { audioButton }
 
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) {
@@ -342,7 +343,7 @@ struct ReaderContainerView: View {
                         }
 
                         // ElevenLabs tile (if key is set)
-                        if !audio.apiKey.isEmpty {
+                        if !storedAPIKey.isEmpty {
                             settingsTile(label: "ELEVENLABS") {
                                 Button { showSettings = true } label: {
                                     HStack {
