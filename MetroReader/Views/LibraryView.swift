@@ -10,8 +10,10 @@ struct LibraryView: View {
     @State private var bookToDelete: Book?
     @State private var showSearch = false
     @State private var showSortSheet = false
+    @State private var showSettings = false
     @State private var selectedFormat: String? = nil
     @State private var activeCategory: String? = nil  // "recent" | "audio" | nil
+    @StateObject private var dummySettings = ReadingSettings()
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -49,6 +51,9 @@ struct LibraryView: View {
                 bookToDelete = nil
             }
             Button("Cancel", role: .cancel) { bookToDelete = nil }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet(settings: dummySettings)
         }
         .confirmationDialog("Sort By", isPresented: $showSortSheet) {
             ForEach(SortOrder.allCases, id: \.rawValue) { order in
@@ -397,7 +402,7 @@ struct LibraryView: View {
                 withAnimation(.easeInOut(duration: 0.18)) { showSearch.toggle() }
             }
             navButton(icon: "arrow.up.arrow.down", filled: false) { showSortSheet = true }
-            navButton(icon: "ellipsis", filled: false) {}
+            navButton(icon: "gearshape", filled: false) { showSettings = true }
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
