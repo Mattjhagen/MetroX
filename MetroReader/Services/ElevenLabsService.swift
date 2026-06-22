@@ -29,14 +29,56 @@ struct WordTiming {
 
 enum ElevenLabsError: LocalizedError {
     case noAPIKey
+    case unauthorized           // 401
+    case forbidden              // 403
+    case voiceNotFound          // 404
+    case rateLimited            // 429
     case httpError(Int)
     case noData
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey:         return "ElevenLabs API key is missing. Add it in Settings."
-        case .httpError(let c): return "ElevenLabs returned HTTP \(c). Check your API key."
-        case .noData:           return "ElevenLabs returned an empty response."
+        case .noAPIKey:       return "ElevenLabs API key is missing. Add it in Settings."
+        case .unauthorized:   return "ElevenLabs: Invalid API key (401). Re-enter your key in Settings → ElevenLabs."
+        case .forbidden:      return "ElevenLabs: Access denied (403). Check your plan limits."
+        case .voiceNotFound:  return "ElevenLabs: Voice not found (404). Try a different voice in Settings."
+        case .rateLimited:    return "ElevenLabs: Rate limit hit (429). Wait a moment and try again."
+        case .httpError(let c): return "ElevenLabs error \(c). Check Settings."
+        case .noData:         return "ElevenLabs returned an empty response."
+        }
+    }
+}
+
+extension ElevenLabsError {
+    static func from(statusCode: Int) -> ElevenLabsError {
+        switch statusCode {
+        case 401: return .unauthorized
+        case 403: return .forbidden
+        case 404: return .voiceNotFound
+        case 429: return .rateLimited
+        default:  return .httpError(statusCode)
+        }
+    }
+}
+
+// MARK: - Key validation
+
+extension ElevenLabsService {
+    /// Pings /v1/user to verify the key is valid. Returns nil on success, error message on failure.
+    static func validateKey(_ key: String) async -> String? {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "Key is empty." }
+        var req = URLRequest(url: URL(string: "https://api.elevenlabs.io/v1/user")!)
+        req.setValue(trimmed, forHTTPHeaderField: "xi-api-key")
+        do {
+            let (_, response) = try await URLSession.shared.data(for: req)
+            if let http = response as? HTTPURLResponse {
+                if http.statusCode == 200 { return nil }
+                return ElevenLabsError.from(statusCode: http.statusCode).localizedDescription
+            }
+            return "Unexpected response."
+        } catch {
+            return error.localizedDescription
         }
     }
 }
@@ -165,7 +207,7 @@ enum ElevenLabsService {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw ElevenLabsError.httpError(http.statusCode)
+            throw ElevenLabsError.from(statusCode: http.statusCode)
         }
         guard !data.isEmpty else { throw ElevenLabsError.noData }
         return data

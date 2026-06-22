@@ -9,6 +9,9 @@ struct SettingsSheet: View {
     @AppStorage("audioFollowsReading") private var audioFollowsReading: Bool   = false
     @AppStorage("ttsHighlightEnabled") private var ttsHighlightEnabled: Bool   = false
 
+    @State private var keyTestResult: String? = nil
+    @State private var keyTesting    = false
+
     var body: some View {
         ZStack {
             Metro.background.ignoresSafeArea()
@@ -94,17 +97,24 @@ struct SettingsSheet: View {
                         VStack(alignment: .leading, spacing: 0) {
                             // API Key input
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("API KEY")
-                                    .font(Metro.labelSm(size: 10))
-                                    .foregroundStyle(Metro.onSurfaceVariant)
+                                HStack {
+                                    Text("API KEY")
+                                        .font(Metro.labelSm(size: 10))
+                                        .foregroundStyle(Metro.onSurfaceVariant)
+                                    Spacer()
+                                    if !apiKey.isEmpty {
+                                        Text("\(apiKey.count) chars")
+                                            .font(Metro.labelSm(size: 10))
+                                            .foregroundStyle(Metro.onSurfaceVariant.opacity(0.6))
+                                    }
+                                }
                                 SecureField("", text: $apiKey,
                                     prompt: Text("Paste key here…").foregroundStyle(Metro.onSurfaceVariant))
                                     .onChange(of: apiKey) { old, v in
                                         let trimmed = v.trimmingCharacters(in: .whitespacesAndNewlines)
                                         if trimmed != v { apiKey = trimmed }
-                                        // Flush cached audio when the key changes so stale
-                                        // entries don't mask a newly-entered valid key.
                                         if !old.isEmpty && old != trimmed { ElevenLabsService.clearCache() }
+                                        keyTestResult = nil
                                     }
                                     .foregroundStyle(Metro.onSurface)
                                     .font(Metro.bodyMd())
@@ -116,6 +126,46 @@ struct SettingsSheet: View {
                                             .fill(apiKey.isEmpty ? Metro.outlineVariant : Metro.primary)
                                             .frame(height: 2)
                                     }
+
+                                // Test Key button + result
+                                if !apiKey.isEmpty {
+                                    HStack(spacing: 8) {
+                                        Button {
+                                            keyTesting = true
+                                            keyTestResult = nil
+                                            Task {
+                                                let result = await ElevenLabsService.validateKey(apiKey)
+                                                keyTestResult = result ?? "✓ Key is valid"
+                                                keyTesting = false
+                                            }
+                                        } label: {
+                                            HStack(spacing: 6) {
+                                                if keyTesting {
+                                                    ProgressView().scaleEffect(0.7).tint(Metro.background)
+                                                } else {
+                                                    Image(systemName: "antenna.radiowaves.left.and.right")
+                                                        .font(.system(size: 11))
+                                                }
+                                                Text(keyTesting ? "TESTING…" : "TEST KEY")
+                                                    .font(Metro.labelSm(size: 11))
+                                            }
+                                            .foregroundStyle(Metro.background)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 7)
+                                            .background(Metro.primary)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(keyTesting)
+
+                                        if let result = keyTestResult {
+                                            Text(result)
+                                                .font(Metro.labelSm(size: 11))
+                                                .foregroundStyle(result.hasPrefix("✓") ? Metro.secondary : Color(metroHex: "#ffb4ab"))
+                                                .lineLimit(2)
+                                        }
+                                    }
+                                    .padding(.top, 8)
+                                }
                             }
                             .padding(.bottom, 16)
 
