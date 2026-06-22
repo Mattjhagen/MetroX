@@ -94,7 +94,13 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
 
     private func synthesizeAndPlay(text: String, chunkKey: String) async {
-        guard !apiKey.isEmpty else {
+        // Read fresh from UserDefaults at call time — @AppStorage can lag
+        // behind when the value is set in a different view context.
+        let liveKey = (UserDefaults.standard.string(forKey: "elevenLabsAPIKey") ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let liveVoice = (UserDefaults.standard.string(forKey: "elevenLabsVoiceID") ?? voiceID)
+
+        guard !liveKey.isEmpty else {
             error = ElevenLabsError.noAPIKey.errorDescription
             return
         }
@@ -107,13 +113,13 @@ final class AudioReaderService: NSObject, ObservableObject, AVAudioPlayerDelegat
             let audioData: Data
             if highlightEnabled {
                 let (data, timings) = try await ElevenLabsService.synthesizeWithTimings(
-                    text: truncated, apiKey: apiKey, voiceID: voiceID
+                    text: truncated, apiKey: liveKey, voiceID: liveVoice
                 )
                 audioData = data
                 wordTimings = timings
             } else {
                 audioData = try await ElevenLabsService.synthesize(
-                    text: truncated, apiKey: apiKey, voiceID: voiceID
+                    text: truncated, apiKey: liveKey, voiceID: liveVoice
                 )
                 wordTimings = []
             }

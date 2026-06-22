@@ -39,7 +39,7 @@ enum ElevenLabsError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noAPIKey:       return "ElevenLabs API key is missing. Add it in Settings."
-        case .unauthorized:   return "ElevenLabs: Invalid API key (401). Re-enter your key in Settings → ElevenLabs."
+        case .unauthorized:   return "ElevenLabs: Invalid API key (401). Tap the eye icon in Settings to see what's stored, then CLEAR and re-paste."
         case .forbidden:      return "ElevenLabs: Access denied (403). Check your plan limits."
         case .voiceNotFound:  return "ElevenLabs: Voice not found (404). Try a different voice in Settings."
         case .rateLimited:    return "ElevenLabs: Rate limit hit (429). Wait a moment and try again."
